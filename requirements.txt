@@ -1,0 +1,12 @@
+numpy>=1.26
+pandas>=2.0
+yfinance>=0.2.50
+gymnasium>=0.29
+stable-baselines3>=2.3
+torch>=2.2
+plotly>=5.20
+seaborn>=0.13
+matplotlib>=3.8
+tqdm
+rich
+pytest>=8.0
