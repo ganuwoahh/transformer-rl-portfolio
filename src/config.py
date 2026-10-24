@@ -39,6 +39,14 @@ VOL_WINDOWS = (14, 30)
 SHARPE_MOM_WINDOW = 60
 RSI_WINDOW = 14
 MACD_FAST, MACD_SLOW, MACD_SIGNAL = 12, 26, 9
+
+# --- Environment ------------------------------------------------------------
+LOOKBACK = 60            # days of history the agent sees
+EPISODE_LEN = 252        # training episodes: random start, one trading year
+COST_BPS = 5.0           # cost per unit of risky-asset notional traded (5 bps = 0.05%)
+LOGIT_SCALE = 3.0        # action in [-1, 1] is scaled to softmax logits in [-3, 3]
+REWARD_SCALE = 100.0     # reward = 100 * daily log growth (i.e. in percent)
+REBALANCE_EVERY = 21     # baselines rebalance roughly monthly
 VOLUME_WINDOW = 20
 ZSCORE_WINDOW = 252      # trailing window for causal z-scoring
 ZSCORE_CLIP = 5.0
