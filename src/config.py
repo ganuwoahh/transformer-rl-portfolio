@@ -1,18 +1,15 @@
-"""Central configuration. Every tunable lives here so experiments are reproducible."""
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-# On Colab these are redirected to Google Drive via environment variables so that
-# cached data and checkpoints survive session disconnects.
 DATA_DIR = Path(os.environ.get("DATA_DIR", ROOT / "data"))
 RESULTS_DIR = Path(os.environ.get("RESULTS_DIR", ROOT / "results"))
 
 # --- Universe ---------------------------------------------------------------
 ASSETS = [
-    "AAPL", "MSFT", "NVDA", "AMZN",  # tech / growth
+    "AAPL", "MSFT", "NVDA", "AMZN",  # tech
     "JPM",                            # financials
     "XOM",                            # energy
     "JNJ", "PG",                      # defensives
@@ -20,7 +17,7 @@ ASSETS = [
     "GLD", "TLT",                     # gold, long bonds
     "BTC-USD",                        # crypto
 ]
-BENCHMARK = "SPY"        # benchmark only, never traded by the agent
+BENCHMARK = "SPY"        # benchmark only never traded
 CALENDAR_TICKER = "SPY"  # all series are aligned to this ticker's trading days
 MACRO_TICKERS = {"vix": "^VIX", "tnx": "^TNX", "dxy": "DX-Y.NYB"}
 RF_TICKER = "^IRX"       # 13-week T-bill yield (annualised %): cash return + Sharpe risk-free
@@ -43,7 +40,7 @@ MACD_FAST, MACD_SLOW, MACD_SIGNAL = 12, 26, 9
 # --- Environment ------------------------------------------------------------
 LOOKBACK = 60            # days of history the agent sees
 EPISODE_LEN = 252        # training episodes: random start, one trading year
-COST_BPS = 5.0           # cost per unit of risky-asset notional traded (5 bps = 0.05%)
+COST_BPS = 5.0           # cost per unit of risky-asset notional traded (5 bps = 0.05% and 10 bps = 0.1% (for testing))
 LOGIT_SCALE = 3.0        # action in [-1, 1] is scaled to softmax logits in [-3, 3]
 REWARD_SCALE = 100.0     # reward = 100 * daily log growth (i.e. in percent)
 REBALANCE_EVERY = 21     # baselines rebalance roughly monthly
