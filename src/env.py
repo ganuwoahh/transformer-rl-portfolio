@@ -1,18 +1,15 @@
-"""Gymnasium environment for daily portfolio allocation with transaction costs.
-
-Timing (no look-ahead)
-  * At step k the agent sees feature rows up to and including the close of day t.
-  * It chooses target weights at that close, pays costs to get there, and earns the
-    return of day t+1.
-  * Episodes start fully in cash.
-
-Observation (Dict)
-  "seq"     : (lookback, D) z-scored features, oldest row first. Column index of an asset
-              feature is asset_idx * F + feature_idx; the macro features are the last M columns.
-  "weights" : (N+1,) current weights after price drift (risky assets..., cash)
-Action     : Box[-1, 1]^(N+1), turned into long-only weights by softmax (see portfolio.py)
-Reward     : reward_scale * log(net portfolio growth over the day), net of costs
 """
+Gym environment for portfolio allocation
+
+at step k, agent sees features until end of day t
+it then chooses target weights, pays the costs and earns returns from t+1
+starts with only cash
+
+13 weights (12 risky assets + cash)
+action: choose weights
+reward: scale * log(net growth on t+1) + net costs
+"""
+
 from __future__ import annotations
 
 import gymnasium as gym
@@ -38,11 +35,6 @@ class PortfolioEnv(gym.Env):
         logit_scale: float = cfg.LOGIT_SCALE,
         reward_scale: float = cfg.REWARD_SCALE,
     ):
-        """`start`/`end` delimit the return days [start, end) this env may earn.
-
-        episode_len=None runs one deterministic pass over the whole range (use for validation
-        and test). An integer gives random-start episodes of that length (use for training).
-        """
         super().__init__()
         span = end - start
         if start < lookback:
@@ -75,9 +67,7 @@ class PortfolioEnv(gym.Env):
         self._w = self._cash_weights()
 
     @classmethod
-    def for_split(cls, data: MarketData, split: str, **kwargs):
-        """Env over the 'train', 'val' or 'test' split. Train uses random-start episodes;
-        val/test do one deterministic pass over the whole split."""
+    def for_split(cls, data: MarketData, split: str, **kwargs): #training is random start. test/val is one traceable pass
         a, b = data.split_bounds()[split]
         lookback = kwargs.get("lookback", cfg.LOOKBACK)
         kwargs.setdefault("episode_len", cfg.EPISODE_LEN if split == "train" else None)
@@ -103,7 +93,7 @@ class PortfolioEnv(gym.Env):
         return self._obs(self._first - 1), {}
 
     def step(self, action):
-        t = self._first - 1 + self._k  # decision made at the close of day t
+        t = self._first - 1 + self._k  #decision made at the end of day t
         target = action_to_weights(action, self.logit_scale)
         growth, w_next, traded, cost = portfolio_step(
             self._w, target, self.data.returns[t + 1], self.data.rf[t + 1], self.cost_rate
