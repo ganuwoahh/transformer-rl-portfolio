@@ -1,4 +1,4 @@
-# Rule baselines with the same backtest as the agent. No params
+# Rule baselines with the same backtest as the agent (no params)
 
 from __future__ import annotations
 
