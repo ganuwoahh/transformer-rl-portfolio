@@ -1,4 +1,5 @@
-"""Portfolio accounting shared by the RL environment and the baselines.
+"""
+Portfolio accounting shared by the RL environment and the baselines.
 
 One implementation for both guarantees every strategy is charged costs identically.
 
