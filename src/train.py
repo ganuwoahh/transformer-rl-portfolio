@@ -1,4 +1,5 @@
-"""PPO training with validation-Sharpe checkpointing and early stopping.
+"""
+PPO training with validation-Sharpe checkpointing and early stopping.
 
 Example:  python -m src.train --model transformer --seed 0 --timesteps 500000
 Output :  RESULTS_DIR/runs/<tag>/<model>_seed<seed>/{best.zip, last.zip, val_curve.csv, summary.json}
