@@ -48,3 +48,17 @@ def pretty(table: pd.DataFrame) -> pd.DataFrame:
     out["Calmar"] = table["Calmar"].map(lambda x: f"{x:.2f}")
     out["Turnover (x/yr)"] = table["Turnover (x/yr)"].map(lambda x: f"{x:.1f}x")
     return out
+
+def run_policy(model, env) -> BacktestResult:
+    """Run a trained SB3 model deterministically over one full pass of `env` (use a val/test env)."""
+    obs, _ = env.reset(seed=0)
+    nets, traded, weights, done = [], [], [], False
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        obs, _, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
+        nets.append(info["net_return"])
+        traded.append(info["traded"])
+        weights.append(info["target_weights"])
+    sl = slice(env.start, env.end)
+    return BacktestResult(env.data.dates[sl], np.array(nets), np.array(traded), np.array(weights), env.data.rf[sl].copy())
