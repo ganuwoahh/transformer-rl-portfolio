@@ -1,12 +1,6 @@
-"""Download, cache and align market data from yfinance.
-
-Output of `load_market_data()`:
-  prices: DataFrame, columns = MultiIndex (field, ticker), fields = open/high/low/close/volume
-          (split/dividend adjusted), rows = SPY trading days.
-  macro : DataFrame, columns = vix, tnx, dxy, rf (all closes), same rows.
-
-Everything is aligned to the SPY trading calendar. BTC-USD trades 7 days a week, so
-weekend moves get folded into the following Monday's return.
+"""
+download and align and cache yahoo finance data
+everything is algined to SPY but BTC is 7 days.
 """
 from __future__ import annotations
 
@@ -21,8 +15,7 @@ FIELDS = ["open", "high", "low", "close", "volume"]
 
 
 def download_ohlcv(tickers, start, end=None, retries: int = 3) -> pd.DataFrame:
-    """Download daily OHLCV for `tickers`. Returns columns MultiIndex (field, ticker)."""
-    import yfinance as yf  # imported lazily so the rest of the package works without it
+    import yfinance as yf  #imported lazily so the rest of the package works without it
 
     tickers = list(dict.fromkeys(tickers))
     raw = None
@@ -34,16 +27,15 @@ def download_ohlcv(tickers, start, end=None, retries: int = 3) -> pd.DataFrame:
             )
             if raw is not None and not raw.empty:
                 break
-        except Exception as exc:  # rate limits happen on shared Colab IPs
+        except Exception as exc:  #rate limits happen on shared Colab IPs
             print(f"  attempt {attempt}/{retries} failed: {exc}")
         time.sleep(5 * attempt)
     if raw is None or raw.empty:
         raise RuntimeError(
-            "yfinance returned no data (rate limit or network issue). "
-            "Wait a few minutes and retry, or run `pip install -U yfinance`."
+            "yfinance returned no data"
         )
 
-    if not isinstance(raw.columns, pd.MultiIndex):  # single-ticker fallback
+    if not isinstance(raw.columns, pd.MultiIndex):  #single-ticker fallback
         raw.columns = pd.MultiIndex.from_product([raw.columns, tickers])
     raw.columns = pd.MultiIndex.from_arrays(
         [raw.columns.get_level_values(0).str.lower(), raw.columns.get_level_values(1)],
@@ -62,7 +54,6 @@ def download_ohlcv(tickers, start, end=None, retries: int = 3) -> pd.DataFrame:
 
 
 def align_to_calendar(df: pd.DataFrame, calendar: pd.DatetimeIndex, max_ffill: int = 5) -> pd.DataFrame:
-    """Reindex to `calendar`, forward-filling short gaps (holidays on other exchanges)."""
     return df.reindex(calendar).ffill(limit=max_ffill)
 
 
@@ -81,7 +72,6 @@ def _unflatten(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_market_data(refresh: bool = False, start=cfg.DATA_START, end=cfg.DATA_END):
-    """Return (prices, macro). Uses the CSV cache in DATA_DIR/raw unless refresh=True."""
     raw_dir = cfg.DATA_DIR / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     p_prices, p_macro = raw_dir / "prices.csv", raw_dir / "macro.csv"
@@ -92,12 +82,12 @@ def load_market_data(refresh: bool = False, start=cfg.DATA_START, end=cfg.DATA_E
         return prices, macro
 
     traded = list(dict.fromkeys(cfg.ASSETS + [cfg.BENCHMARK, cfg.CALENDAR_TICKER]))
-    print(f"Downloading {len(traded)} tickers...")
+    print(f"Downloading {len(traded)} tickers")
     prices = download_ohlcv(traded, start, end)
     calendar = prices["close"][cfg.CALENDAR_TICKER].dropna().index
     prices = align_to_calendar(prices, calendar)
 
-    print("Downloading macro series...")
+    print("Downloading macro series")
     macro_tickers = list(cfg.MACRO_TICKERS.values()) + [cfg.RF_TICKER]
     macro = download_ohlcv(macro_tickers, start, end)["close"]
     macro = align_to_calendar(macro, calendar)
@@ -105,7 +95,7 @@ def load_market_data(refresh: bool = False, start=cfg.DATA_START, end=cfg.DATA_E
     rename[cfg.RF_TICKER] = "rf"
     macro = macro.rename(columns=rename)[["vix", "tnx", "dxy", "rf"]]
 
-    # Trim to the first date on which every traded asset has a price, then require no gaps.
+    #Trim to the first date on which every traded asset has a price then require no gaps.
     close = prices["close"]
     all_ok = close.notna().all(axis=1)
     if not all_ok.any():
