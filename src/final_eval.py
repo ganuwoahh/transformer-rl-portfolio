@@ -1,10 +1,6 @@
-"""One-shot evaluation of every trained run (and the baselines) on the held-out TEST split.
-
-Run this once, after model selection is finished. Each model is the checkpoint chosen by
-VALIDATION Sharpe; nothing here feeds back into training.
-
-    python -m src.final_eval                  # 5 bps costs (main result)
-    python -m src.final_eval --cost-bps 10    # robustness check
+"""
+model chosen by val sharpe
+one shot testing
 """
 from __future__ import annotations
 
@@ -24,7 +20,6 @@ from .features import build_market_data
 
 
 def save_result(res, path):
-    """Save a BacktestResult so plots can be made later without re-running anything."""
     np.savez(path, dates=np.array(res.dates.strftime("%Y-%m-%d").tolist(), dtype="U10"),
              net_returns=res.net_returns, traded=res.traded, weights=res.weights, rf=res.rf)
 
@@ -85,7 +80,6 @@ def main():
     print("\n=== Every individual run ===")
     print(pretty(metrics_table(per_run)).to_string())
     print(f"\nSaved to {out}")
-
 
 if __name__ == "__main__":
     main()
