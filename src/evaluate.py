@@ -1,4 +1,6 @@
-"""Performance metrics. (Plots get added here later.)"""
+"""
+metrics + plots
+"""
 from __future__ import annotations
 
 import numpy as np
@@ -30,8 +32,8 @@ def compute_metrics(res: BacktestResult, periods: int = cfg.TRADING_DAYS) -> dic
         "sharpe": float(excess.mean() / sd * np.sqrt(periods)) if sd > 0 else np.nan,
         "max_drawdown": mdd,
         "calmar": ann_ret / abs(mdd) if mdd < 0 else np.nan,
-        "cvar_95": float(r[r <= var].mean()),  # mean of the worst 5% of days (negative = loss)
-        "turnover": float(np.mean(res.traded) * periods),  # traded notional per year, in multiples of NAV
+        "cvar_95": float(r[r <= var].mean()),  #mean of the worst 5% of days
+        "turnover": float(np.mean(res.traded) * periods),  #traded notional per year, in multiples of NAV
     }
 
 
@@ -49,8 +51,7 @@ def pretty(table: pd.DataFrame) -> pd.DataFrame:
     out["Turnover (x/yr)"] = table["Turnover (x/yr)"].map(lambda x: f"{x:.1f}x")
     return out
 
-def run_policy(model, env) -> BacktestResult:
-    """Run a trained SB3 model deterministically over one full pass of `env` (use a val/test env)."""
+def run_policy(model, env) -> BacktestResult: #env is train test or val
     obs, _ = env.reset(seed=0)
     nets, traded, weights, done = [], [], [], False
     while not done:
