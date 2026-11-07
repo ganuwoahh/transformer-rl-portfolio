@@ -1,15 +1,16 @@
-"""Feature engineering + causal normalisation.
+"""
+Feature engineering + causal normalisation.
 
 Timing convention (important for avoiding look-ahead):
-  * Row t of every feature array uses data up to and including the close of day t only.
-  * `returns[t]` is the simple return realised from close t-1 to close t.
-  * The environment observes row t, chooses weights at close t, and earns `returns[t+1]`.
-  * `rf[t]` is the daily cash return earned over the same interval as `returns[t]`; it uses
-    the T-bill yield observed at close t-1, i.e. known when the position was opened.
+Row t of every feature array uses data up to and including the close of day t only.
+returns[t] is the simple return realised from close t-1 to close t.
+The environment observes row t, chooses weights at close t, and earns returns[t+1].
+rf[t] is the daily cash return earned over the same interval as returns[t]; it uses the T-bill yield observed at close t-1, i.e. known when the position was opened.
 
-Normalisation: each feature is z-scored with the mean/std of the *previous* 252 trading days
-(`shift(1)`), so a value never influences its own statistics and nothing from the future is used.
+Normalisation: each feature is z-scored with the mean/std of the previous 252 trading days
+shift(1), so a value never influences its own statistics and nothing from the future is used.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -39,14 +40,13 @@ def _rsi(close: pd.DataFrame, window: int) -> pd.DataFrame:
 
 
 def compute_asset_features(close: pd.DataFrame, volume: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Per-asset raw (un-normalised) features. Each value is a (T, N) DataFrame."""
     log_ret = np.log(close).diff()
     feats: dict[str, pd.DataFrame] = {"log_ret": log_ret}
 
-    for w in cfg.VOL_WINDOWS:  # annualised rolling volatility
+    for w in cfg.VOL_WINDOWS:  #annualised rolling volatility
         feats[f"vol_{w}"] = log_ret.rolling(w).std() * np.sqrt(cfg.TRADING_DAYS)
 
-    # MACD, scaled by price so it is comparable across assets
+    #MACD, scaled by price so it is comparable across assets
     fast = close.ewm(span=cfg.MACD_FAST, adjust=False, min_periods=cfg.MACD_FAST).mean()
     slow = close.ewm(span=cfg.MACD_SLOW, adjust=False, min_periods=cfg.MACD_SLOW).mean()
     macd = (fast - slow) / close
@@ -56,12 +56,12 @@ def compute_asset_features(close: pd.DataFrame, volume: pd.DataFrame) -> dict[st
 
     feats["rsi"] = (_rsi(close, cfg.RSI_WINDOW) - 50.0) / 50.0
 
-    # Sharpe momentum: annualised rolling mean/std of daily log returns
+    #Sharpe momentum: annualised rolling mean/std of daily log returns
     w = cfg.SHARPE_MOM_WINDOW
     mean, std = log_ret.rolling(w).mean(), log_ret.rolling(w).std()
     feats["sharpe_mom"] = mean / std.where(std > 0) * np.sqrt(cfg.TRADING_DAYS)
 
-    # Volume relative to its recent average (log ratio)
+    #Volume relative to its recent average
     vol = volume.where(volume > 0).ffill()
     feats["vol_ratio"] = np.log(vol / vol.rolling(cfg.VOLUME_WINDOW).mean())
     return feats
