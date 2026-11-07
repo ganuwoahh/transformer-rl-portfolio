@@ -1,13 +1,14 @@
-"""Feature extractors for Stable-Baselines3 PPO.
+"""
+Feature extractors for Stable-Baselines3 PPO.
 
 Both take the Dict observation from PortfolioEnv ("seq": (L, D), "weights": (N+1,)) and output
 [encoded market history | today's macro features | current weights], so the actor and critic
 heads that sit on top are identical and the only difference between models is the encoder.
 
-  * TransformerExtractor : 2-layer, 4-head Transformer encoder over the L-day window.
-  * MLPExtractor         : MLP over the flattened window (same information as the Transformer).
-                           window=1 gives a "last day only" MLP with no history.
+TransformerExtractor : 2-layer, 4-head Transformer encoder over the L-day window.
+MLPExtractor         : MLP over the flattened window (same information as the Transformer) (window=1 gives a "last day only" MLP with no history.)
 """
+
 from __future__ import annotations
 
 import torch
@@ -55,7 +56,6 @@ class MLPExtractor(BaseFeaturesExtractor):
 
 
 def policy_kwargs_for(name: str, macro_dim: int) -> dict:
-    """SB3 policy_kwargs for 'transformer', 'mlp' (full window) or 'mlp_last' (last day only)."""
     if name == "transformer":
         cls, kw = TransformerExtractor, dict(macro_dim=macro_dim)
     elif name == "mlp":
