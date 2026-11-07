@@ -1,4 +1,3 @@
-"""Accounting, environment and baseline tests. Run: python -m pytest -q tests"""
 import numpy as np
 import pytest
 
